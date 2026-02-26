@@ -1,0 +1,464 @@
+#!/bin/bash
+# 0011-setup-calamares.hook.chroot
+# Calamares インストーラーの Sisrin ブランディング設定
+set -e
+
+echo "[Sisrin] Calamares インストーラーを設定します"
+
+CALAMARES_DIR="/etc/calamares"
+BRANDING_DIR="${CALAMARES_DIR}/branding/sisrin"
+MODULES_DIR="${CALAMARES_DIR}/modules"
+
+mkdir -p "$BRANDING_DIR" "$MODULES_DIR"
+
+# ============================================================
+# settings.conf — メインシーケンス定義
+# ============================================================
+cat > "${CALAMARES_DIR}/settings.conf" << 'EOF'
+---
+modules-search: [ local, /usr/lib/calamares/modules ]
+
+sequence:
+  - show:
+      - welcome
+      - locale
+      - keyboard
+      - partition
+      - users
+      - summary
+  - exec:
+      - partition
+      - mount
+      - unpackfs
+      - machineid
+      - fstab
+      - locale
+      - keyboard
+      - localecfg
+      - luksbootkeyfile
+      - users
+      - displaymanager
+      - networkcfg
+      - hwclock
+      - services-systemd
+      - grubcfg
+      - bootloader
+      - shellprocess
+      - packages
+      - removeuser
+      - umount
+  - show:
+      - finished
+
+branding: sisrin
+prompt-install: false
+dont-chroot: false
+oem-setup: false
+disable-cancel: false
+disable-cancel-during-exec: false
+quit-at-end: false
+EOF
+
+# ============================================================
+# branding.desc — Sisrin ブランディング
+# ============================================================
+cat > "${BRANDING_DIR}/branding.desc" << 'EOF'
+---
+componentName: sisrin
+
+welcomeStyleCalamares: false
+welcomeExpandingLogo: true
+
+strings:
+  productName:      "Sisrin OS"
+  shortProductName: "Sisrin"
+  version:          "1.0"
+  shortVersion:     "1.0"
+  versionedName:    "Sisrin OS 1.0"
+  shortVersionedName: "Sisrin 1.0"
+  bootloaderEntryName: "Sisrin OS"
+  productUrl:       "https://github.com/rintaro-s"
+  supportUrl:       "https://github.com/rintaro-s"
+  knownIssuesUrl:   "https://github.com/rintaro-s"
+  releaseNotesUrl:  "https://github.com/rintaro-s"
+  donateUrl:        ""
+
+images:
+  productLogo:      "sisrin-logo.png"
+  productIcon:      "sisrin-logo.png"
+  productWelcome:   "languages.png"
+
+slideshow: "show.qml"
+slideshowAPI: 2
+
+style:
+  sidebarBackground:    "#1a1a2e"
+  sidebarText:          "#e0e0e0"
+  sidebarTextSelect:    "#ffffff"
+  sidebarTextHighlight: "#6c63ff"
+EOF
+
+# ============================================================
+# show.qml — スライドショー（シンプル版）
+# ============================================================
+cat > "${BRANDING_DIR}/show.qml" << 'EOF'
+import QtQuick 2.0
+import calamares.slideshow 1.0
+
+Presentation {
+    id: presentation
+    Slide {
+        anchors.fill: parent
+        Rectangle {
+            anchors.fill: parent
+            color: "#1a1a2e"
+            Column {
+                anchors.centerIn: parent
+                spacing: 20
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Sisrin OS へようこそ"
+                    color: "#ffffff"
+                    font.pixelSize: 32
+                    font.bold: true
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "インストール中です。しばらくお待ちください..."
+                    color: "#b0b0b0"
+                    font.pixelSize: 16
+                }
+            }
+        }
+    }
+}
+EOF
+
+# ============================================================
+# ロゴシンボルリンク (壁紙をロゴ代わりに使用)
+# ============================================================
+LOGO_PATH="/usr/share/sisrin/logo.png"
+WALLPAPER_PATH="/usr/share/sisrin/wallpaper.png"
+if [ -f "$LOGO_PATH" ]; then
+    cp "$LOGO_PATH" "${BRANDING_DIR}/sisrin-logo.png"
+elif [ -f "$WALLPAPER_PATH" ]; then
+    cp "$WALLPAPER_PATH" "${BRANDING_DIR}/sisrin-logo.png"
+fi
+
+# languages.png (Calamares 付属のロゴを使用)
+LANGS_SRC="/usr/share/calamares/branding/default/languages.png"
+if [ -f "$LANGS_SRC" ]; then
+    cp "$LANGS_SRC" "${BRANDING_DIR}/languages.png"
+fi
+
+# ============================================================
+# unpackfs.conf — squashfs の展開設定
+# ============================================================
+cat > "${MODULES_DIR}/unpackfs.conf" << 'EOF'
+---
+unpack:
+    - source: /run/live/medium/live/filesystem.squashfs
+      sourcefs: squashfs
+      destination: ""
+EOF
+
+# ============================================================
+# locale.conf — ロケール設定
+# ============================================================
+cat > "${MODULES_DIR}/locale.conf" << 'EOF'
+---
+region: "Asia"
+zone: "Tokyo"
+localeGenPath: /etc/locale.gen
+geoip:
+    style: "none"
+EOF
+
+# ============================================================
+# keyboard.conf — キーボード設定
+# ============================================================
+cat > "${MODULES_DIR}/keyboard.conf" << 'EOF'
+---
+xorgKeyboard:
+    keysDir: "/usr/share/X11/xkb/rules"
+    rulesFile: "evdev"
+    writeEtcDefaultKeyboard: true
+EOF
+
+# ============================================================
+# users.conf  — ユーザー作成設定
+# ============================================================
+cat > "${MODULES_DIR}/users.conf" << 'EOF'
+---
+defaultGroups:
+    - name: users
+      state: present
+    - name: lp
+      state: present
+    - name: video
+      state: present
+    - name: network
+      state: present
+    - name: storage
+      state: present
+    - name: wheel
+      state: present
+    - name: audio
+      state: present
+
+autologinGroup: autologin
+sudoersGroup: sudo
+setRootPassword: false
+doAutologin: false
+doReusePassword: true
+passwordRequirements:
+    minLength: 8
+
+userShell: /usr/bin/zsh
+
+avatar:
+    avatar: "/usr/share/sisrin/wallpaper.png"
+EOF
+
+# ============================================================
+# displaymanager.conf — GDM3
+# ============================================================
+cat > "${MODULES_DIR}/displaymanager.conf" << 'EOF'
+---
+displaymanagers:
+    - gdm3
+
+basicSetup: false
+sysconfigSetup: false
+EOF
+
+# ============================================================
+# packages.conf — インストール後不要パッケージ削除
+# ============================================================
+cat > "${MODULES_DIR}/packages.conf" << 'EOF'
+---
+backend: apt
+
+operations:
+    - remove:
+          - live-boot
+          - live-boot-initramfs-tools
+          - live-config
+          - live-config-systemd
+          - calamares
+          - squashfs-tools
+EOF
+
+# ============================================================
+# shellprocess.conf — インストール後の後処理
+# ============================================================
+cat > "${MODULES_DIR}/shellprocess.conf" << 'EOF'
+---
+dontChroot: false
+timeout: 300
+
+script:
+    - command: "sed -i 's/Debian GNU\\/Linux/Sisrin OS/g' /etc/default/grub"
+      timeout: 10
+    - command: "sed -i 's/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR=\"Sisrin OS\"/' /etc/default/grub"
+      timeout: 10
+    - command: "sed -i 's/Debian/Sisrin OS/g' /etc/grub.d/10_linux"
+      timeout: 10
+    - command: "sed -i 's/Debian/Sisrin OS/g' /etc/grub.d/30_os-prober"
+      timeout: 10
+    - command: "update-grub"
+      timeout: 60
+    - command: "sed -i 's/Debian GNU\\/Linux/Sisrin OS/g' /boot/grub/grub.cfg"
+      timeout: 10
+    - command: "sed -i 's/Debian/Sisrin OS/g' /boot/grub/grub.cfg"
+      timeout: 10
+    - command: "/usr/bin/dconf update"
+      timeout: 30
+EOF
+
+# ============================================================
+# services-systemd.conf — GDM3 有効化
+# ============================================================
+cat > "${MODULES_DIR}/services-systemd.conf" << 'EOF'
+---
+services:
+    - name: gdm3
+      preset: true
+      enable: true
+    - name: NetworkManager
+      preset: true
+      enable: true
+    - name: lil-hardware-watchdog
+      preset: true
+      enable: true
+
+targets:
+    - name: graphical
+      set: default
+EOF
+
+# ============================================================
+# networkcfg.conf — ホスト名デフォルト
+# ============================================================
+cat > "${MODULES_DIR}/networkcfg.conf" << 'EOF'
+---
+mdns: false
+EOF
+
+# ============================================================
+# bootloader.conf — GRUB インストール設定
+# ============================================================
+cat > "${MODULES_DIR}/bootloader.conf" << 'EOF'
+---
+efiBootLoader: "grub"
+kernel: "/vmlinuz"
+img: "/initrd.img"
+kernelLine: "quiet splash"
+timeout: 1
+
+grubInstall:    "grub-install"
+grubMkconfig:   "grub-mkconfig"
+grubCfg:        "/boot/grub/grub.cfg"
+grubProbe:      "grub-probe"
+efiBootMgr:     "efibootmgr"
+
+installEFIfallback: true
+EOF
+
+# ============================================================
+# grubcfg.conf — GRUB 設定ファイル生成
+# ============================================================
+cat > "${MODULES_DIR}/grubcfg.conf" << 'EOF'
+---
+timeout: 1
+timeout_style: countdown
+distributor: "Sisrin OS"
+EOF
+
+# ============================================================
+# welcome.conf — 最低システム要件
+# ============================================================
+cat > "${MODULES_DIR}/welcome.conf" << 'EOF'
+---
+showSupportUrl:    false
+showKnownIssuesUrl: false
+showReleaseNotesUrl: false
+showDonateUrl:     false
+
+requirements:
+    requiredStorage:     15.0
+    requiredRam:         2.0
+    check:
+        - storage
+        - ram
+        - power
+        - internet
+    required:
+        - storage
+        - ram
+EOF
+
+# ============================================================
+# finished.conf — 完了画面の自動再起動設定
+# ============================================================
+cat > "${MODULES_DIR}/finished.conf" << 'EOF'
+---
+restartNowEnabled: true
+restartNowChecked: true
+restartNowCommand: "systemctl reboot"
+EOF
+
+# ============================================================
+# removeuser.conf — ライブユーザーを削除
+# ============================================================
+cat > "${MODULES_DIR}/removeuser.conf" << 'EOF'
+---
+username: "user"
+EOF
+
+# ============================================================
+# machineid.conf
+# ============================================================
+cat > "${MODULES_DIR}/machineid.conf" << 'EOF'
+---
+systemd: true
+dbus: true
+symlink: true
+EOF
+
+# ============================================================
+# Calamares polkit 権限 (sudo なしで起動できるように)
+# ============================================================
+cat > /usr/share/polkit-1/actions/com.github.calamares.calamares.policy << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <action id="com.github.calamares.calamares.install">
+    <description>Install Sisrin OS</description>
+    <message>Administrator privilege is required to install Sisrin OS</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+</policyconfig>
+EOF
+
+echo "[Sisrin] Calamares 設定完了"
+
+# ============================================================
+# デスクトップ インストーラー ショートカット
+# ============================================================
+INSTALL_DESKTOP="/usr/share/applications/sisrin-install.desktop"
+cat > "$INSTALL_DESKTOP" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Sisrin OS をインストール
+Name[en]=Install Sisrin OS
+GenericName=System Installer
+Comment=ディスクに Sisrin OS をインストールします
+Comment[en]=Install Sisrin OS to disk
+Exec=pkexec calamares
+Icon=/usr/share/sisrin/logo.png
+Terminal=false
+Categories=System;
+Keywords=install;installer;calamares;sisrin;
+EOF
+
+# ライブデスクトップにも配置
+DESKTOP_DIR="/home/user/Desktop"
+mkdir -p "$DESKTOP_DIR"
+cp "$INSTALL_DESKTOP" "${DESKTOP_DIR}/sisrin-install.desktop"
+chmod +x "${DESKTOP_DIR}/sisrin-install.desktop"
+chown 1000:1000 "${DESKTOP_DIR}/sisrin-install.desktop"
+
+# GNOME がデスクトップアイコンを信頼済みとして扱うように
+mkdir -p /home/user/.local/share/applications
+cp "$INSTALL_DESKTOP" /home/user/.local/share/applications/
+chown -R 1000:1000 /home/user/.local /home/user/Desktop 2>/dev/null || true
+
+echo "[Sisrin] インストーラーショートカット作成完了"
+
+# ============================================================
+# Calamares 自動起動設定 (Live セッション時のみ)
+# ============================================================
+AUTOSTART_CALAMARES="/home/user/.config/autostart/sisrin-installer-autostart.desktop"
+mkdir -p /home/user/.config/autostart
+cat > "$AUTOSTART_CALAMARES" << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Sisrin OS Installer (Auto)
+Exec=sh -c 'sleep 3 && pkexec calamares'
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=3
+OnlyShowIn=GNOME;
+EOF
+chown 1000:1000 "$AUTOSTART_CALAMARES"
+
+echo "[Sisrin] インストーラー自動起動を設定しました（3秒後に起動）"

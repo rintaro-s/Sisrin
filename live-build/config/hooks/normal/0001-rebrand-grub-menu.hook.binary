@@ -1,0 +1,46 @@
+#!/bin/bash
+# 0001-rebrand-grub-menu.hook.binary
+# ライブISOのGRUBメニューから"Debian"表記を削除する
+set -e
+
+echo "[Sisrin Binary] GRUB/ISOLINUX メニュー表記を Sisrin に変更します"
+
+# binary/boot/grub/grub.cfg (UEFI用)
+GRUB_CFG="binary/boot/grub/grub.cfg"
+if [ -f "$GRUB_CFG" ]; then
+    echo "[Sisrin Binary] $GRUB_CFG を置換中..."
+    sed -i 's/Debian GNU\/Linux/Sisrin OS/g' "$GRUB_CFG"
+    sed -i 's/Debian/Sisrin OS/g' "$GRUB_CFG"
+    sed -i 's/debian/sisrin/g' "$GRUB_CFG"
+    echo "[Sisrin Binary] GRUB EFI メニュー置換完了"
+fi
+
+# binary/isolinux/menu.cfg (BIOS用)
+ISOLINUX_MENU="binary/isolinux/menu.cfg"
+if [ -f "$ISOLINUX_MENU" ]; then
+    echo "[Sisrin Binary] $ISOLINUX_MENU を置換中..."
+    sed -i 's/Debian GNU\/Linux/Sisrin OS/g' "$ISOLINUX_MENU"
+    sed -i 's/Debian/Sisrin OS/g' "$ISOLINUX_MENU"
+    sed -i 's/debian/sisrin/g' "$ISOLINUX_MENU"
+    echo "[Sisrin Binary] ISOLINUX メニュー置換完了"
+fi
+
+# binary/isolinux/live.cfg (BIOS用ライブエントリ)
+ISOLINUX_LIVE="binary/isolinux/live.cfg"
+if [ -f "$ISOLINUX_LIVE" ]; then
+    echo "[Sisrin Binary] $ISOLINUX_LIVE を置換中..."
+    sed -i 's/Debian GNU\/Linux/Sisrin OS/g' "$ISOLINUX_LIVE"
+    sed -i 's/Debian/Sisrin OS/g' "$ISOLINUX_LIVE"
+    sed -i 's/debian/sisrin/g' "$ISOLINUX_LIVE"
+    echo "[Sisrin Binary] ISOLINUX live.cfg 置換完了"
+fi
+
+# binary/boot/grub/live-theme/theme.txt (存在する場合)
+GRUB_THEME_TXT="binary/boot/grub/live-theme/theme.txt"
+if [ -f "$GRUB_THEME_TXT" ]; then
+    echo "[Sisrin Binary] $GRUB_THEME_TXT を置換中..."
+    sed -i 's/Debian GNU\/Linux/Sisrin OS/g' "$GRUB_THEME_TXT"
+    sed -i 's/Debian/Sisrin OS/g' "$GRUB_THEME_TXT"
+fi
+
+echo "[Sisrin Binary] GRUB/ISOLINUX メニュー置換完了"

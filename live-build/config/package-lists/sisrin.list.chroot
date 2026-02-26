@@ -13,17 +13,24 @@ polkitd
 pkexec
 libpam-systemd
 
-# デスクトップ環境 (XFCE)
-xfce4
-xfce4-terminal
-xfce4-screenshooter
-xfce4-taskmanager
-xfce4-power-manager
-thunar
-lightdm
-lightdm-gtk-greeter
+# デスクトップ環境 (GNOME)
+gnome-shell
+gnome-session
+gnome-control-center
+gnome-terminal
+gnome-tweaks
+gnome-shell-extensions
+gnome-system-monitor
+gnome-calculator
+gnome-text-editor
+gnome-backgrounds
+nautilus
+file-roller
+evince
+eog
+gdm3
 
-# Xorg (Recommends の自動インストールが無効でも確実に入れる)
+# Xorg (Wayland のフォールバック用)
 xserver-xorg
 xserver-xorg-core
 xserver-xorg-input-all
@@ -34,6 +41,13 @@ x11-xserver-utils
 x11-utils
 xterm
 dbus-x11
+
+# Calamares インストーラー
+calamares
+squashfs-tools
+os-prober
+cryptsetup
+python3-pyqt5
 
 # ブラウザ・その他GUIアプリ前提
 libglib2.0-0
@@ -66,6 +80,8 @@ autoconf
 automake
 pkg-config
 libssl-dev
+libudev-dev
+libacl1-dev
 rustc
 cargo
 libseccomp-dev
@@ -82,6 +98,3 @@ network-manager-gnome
 pulseaudio
 pavucontrol
 gvfs
-thunar
-mousepad
-ristretto

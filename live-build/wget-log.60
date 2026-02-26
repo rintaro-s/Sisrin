@@ -1,0 +1,13 @@
+--2026-02-26 23:44:58--  http://deb.debian.org/debian//dists/testing/contrib/Contents-amd64.gz
+Resolving deb.debian.org (deb.debian.org)... 199.232.150.132, 2a04:4e42:8c::644
+Connecting to deb.debian.org (deb.debian.org)|199.232.150.132|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 117404 (115K) [application/x-gzip]
+Saving to: ‘cache/contents.chroot/testing/contrib/contents-amd64.gz’
+
+     0K .......... .......... .......... .......... .......... 43% 3.20M 0s
+    50K .......... .......... .......... .......... .......... 87% 4.80M 0s
+   100K .......... ....                                       100% 12.1M=0.03s
+
+2026-02-26 23:44:58 (4.21 MB/s) - ‘cache/contents.chroot/testing/contrib/contents-amd64.gz’ saved [117404/117404]
+

@@ -1,0 +1,11 @@
+--2026-02-26 23:45:00--  http://deb.debian.org/debian//dists/testing/non-free-firmware/Contents-all.gz
+Resolving deb.debian.org (deb.debian.org)... 146.75.114.132, 2a04:4e42:8c::644
+Connecting to deb.debian.org (deb.debian.org)|146.75.114.132|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 33908 (33K) [application/x-gzip]
+Saving to: ‘cache/contents.chroot/testing/non-free-firmware/contents-all.gz’
+
+     0K .......... .......... .......... ...                  100%  137M=0s
+
+2026-02-26 23:45:00 (137 MB/s) - ‘cache/contents.chroot/testing/non-free-firmware/contents-all.gz’ saved [33908/33908]
+

@@ -1,6 +1,6 @@
 #!/bin/bash
 # 0008-setup-wallpaper.hook.chroot
-# 壁紙を設定し、XFCE のデフォルト壁紙として構成する
+# 壁紙を設定し、GNOME のデフォルト壁紙として構成する
 set -e
 
 echo "[Sisrin] 壁紙を設定します"
@@ -8,65 +8,75 @@ echo "[Sisrin] 壁紙を設定します"
 WALLPAPER_SRC="/usr/share/sisrin/wallpaper.png"
 WALLPAPER_DEST="/usr/share/backgrounds/sisrin-wallpaper.png"
 
-# Sisrin ディレクトリ作成
 mkdir -p /usr/share/sisrin
 mkdir -p /usr/share/backgrounds
 
-# includes.chroot でコピー済みか確認
 if [ ! -f "$WALLPAPER_SRC" ]; then
     echo "[Sisrin] 警告: 壁紙ファイルが見つかりません: ${WALLPAPER_SRC}"
-    echo "[Sisrin] デフォルトの XFCE 壁紙を使用します"
-    WALLPAPER_DEST="/usr/share/xfce4/backdrops/xfce-shapes.svg"
+    WALLPAPER_DEST="/usr/share/gnome-control-center/pixmaps/noise-texture.png"
 else
     cp "$WALLPAPER_SRC" "$WALLPAPER_DEST"
     echo "[Sisrin] 壁紙をコピーしました: ${WALLPAPER_DEST}"
 fi
 
-# XFCE デフォルト壁紙設定 (全ユーザー共通の xfconf デフォルト値)
-XFCE_SKEL="/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml"
-mkdir -p "$XFCE_SKEL"
-
-cat > "${XFCE_SKEL}/xfce4-desktop.xml" << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-
-<channel name="xfce4-desktop" version="1.0">
-  <property name="backdrop" type="empty">
-    <property name="screen0" type="empty">
-      <property name="monitor0" type="empty">
-        <property name="workspace0" type="empty">
-          <property name="color-style" type="int" value="0"/>
-          <property name="image-style" type="int" value="5"/>
-          <property name="last-image" type="string" value="${WALLPAPER_DEST}"/>
-        </property>
-      </property>
-      <property name="monitorVirtual1" type="empty">
-        <property name="workspace0" type="empty">
-          <property name="color-style" type="int" value="0"/>
-          <property name="image-style" type="int" value="5"/>
-          <property name="last-image" type="string" value="${WALLPAPER_DEST}"/>
-        </property>
-      </property>
-    </property>
-  </property>
-</channel>
+# --- GNOME dconf システムプロファイル ---
+mkdir -p /etc/dconf/profile
+cat > /etc/dconf/profile/user << 'EOF'
+user-db:user
+system-db:sisrin
 EOF
 
-# lightdm の背景にも適用
-if [ -d /etc/lightdm ]; then
-    sed -i "s|^background=.*|background=${WALLPAPER_DEST}|" \
-        /etc/lightdm/lightdm-gtk-greeter.conf 2>/dev/null || true
-    # 設定ファイルが空もしくは設定がない場合
-    if [ -f /etc/lightdm/lightdm-gtk-greeter.conf ]; then
-        grep -q "^background=" /etc/lightdm/lightdm-gtk-greeter.conf || \
-            echo "background=${WALLPAPER_DEST}" >> /etc/lightdm/lightdm-gtk-greeter.conf
-    fi
+mkdir -p /etc/dconf/db/sisrin.d
+cat > /etc/dconf/db/sisrin.d/01-sisrin-wallpaper << EOF
+[org/gnome/desktop/background]
+picture-uri='file://${WALLPAPER_DEST}'
+picture-uri-dark='file://${WALLPAPER_DEST}'
+picture-options='zoom'
+primary-color='#000000'
+
+[org/gnome/desktop/screensaver]
+picture-uri='file://${WALLPAPER_DEST}'
+picture-options='zoom'
+primary-color='#000000'
+EOF
+
+# dconf DB 更新
+if command -v dconf &>/dev/null; then
+    dconf update 2>/dev/null || true
 fi
 
-# /home/user にも適用 (ライブユーザー)
+# --- GDM3 グリーター背景 (CSS 上書き) ---
+for css_dir in /usr/share/gnome-shell/theme /usr/share/gnome-shell/theme/Yaru; do
+    if [ -d "$css_dir" ] && [ -f "$WALLPAPER_DEST" ]; then
+        for css in "$css_dir"/gdm3.css "$css_dir"/gnome-shell.css; do
+            [ -f "$css" ] || continue
+            # lockDialogGroup の背景を差し替え
+            if grep -q 'lockDialogGroup' "$css"; then
+                sed -i "s|#lockDialogGroup.*{.*}|#lockDialogGroup { background: #000000 url(file://${WALLPAPER_DEST}) center/cover no-repeat; }|" "$css" || true
+            else
+                echo "#lockDialogGroup { background: #000000 url(file://${WALLPAPER_DEST}) center/cover no-repeat; }" >> "$css"
+            fi
+        done
+    fi
+done
+
+# --- /etc/skel 自動スタート (初回ログイン時に壁紙を確実に適用) ---
+mkdir -p /etc/skel/.config/autostart
+cat > /etc/skel/.config/autostart/sisrin-wallpaper.desktop << EOF
+[Desktop Entry]
+Type=Application
+Name=Sisrin Wallpaper Apply
+Exec=gsettings set org.gnome.desktop.background picture-uri 'file://${WALLPAPER_DEST}'
+Hidden=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+EOF
+
+# ライブユーザーにも適用
 if [ -d /home/user ]; then
-    USER_XFCONF="/home/user/.config/xfce4/xfconf/xfce-perchannel-xml"
-    mkdir -p "$USER_XFCONF"
-    cp "${XFCE_SKEL}/xfce4-desktop.xml" "${USER_XFCONF}/xfce4-desktop.xml"
+    mkdir -p /home/user/.config/autostart
+    cp /etc/skel/.config/autostart/sisrin-wallpaper.desktop \
+       /home/user/.config/autostart/
     chown -R 1000:1000 /home/user/.config 2>/dev/null || true
 fi
 

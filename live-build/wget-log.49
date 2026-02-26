@@ -1,0 +1,12 @@
+--2026-02-26 23:03:13--  http://deb.debian.org/debian//dists/testing/non-free/Contents-amd64.gz
+Resolving deb.debian.org (deb.debian.org)... 199.232.150.132, 2a04:4e42:65::644
+Connecting to deb.debian.org (deb.debian.org)|199.232.150.132|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 52561 (51K) [application/x-gzip]
+Saving to: ‘cache/contents.chroot/testing/non-free/contents-amd64.gz’
+
+     0K .......... .......... .......... .......... .......... 97% 3.51M 0s
+    50K .                                                     100% 2.48T=0.01s
+
+2026-02-26 23:03:13 (3.60 MB/s) - ‘cache/contents.chroot/testing/non-free/contents-amd64.gz’ saved [52561/52561]
+

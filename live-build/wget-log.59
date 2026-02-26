@@ -1,0 +1,13 @@
+--2026-02-26 23:44:58--  http://deb.debian.org/debian//dists/testing/contrib/Contents-all.gz
+Resolving deb.debian.org (deb.debian.org)... 199.232.150.132, 2a04:4e42:8c::644
+Connecting to deb.debian.org (deb.debian.org)|199.232.150.132|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 141471 (138K) [application/x-gzip]
+Saving to: ‘cache/contents.chroot/testing/contrib/contents-all.gz’
+
+     0K .......... .......... .......... .......... .......... 36% 3.05M 0s
+    50K .......... .......... .......... .......... .......... 72% 4.41M 0s
+   100K .......... .......... .......... ........             100% 12.6M=0.03s
+
+2026-02-26 23:44:58 (4.50 MB/s) - ‘cache/contents.chroot/testing/contrib/contents-all.gz’ saved [141471/141471]
+

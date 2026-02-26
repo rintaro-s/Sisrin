@@ -1,41 +1,66 @@
 #!/bin/bash
 # 0007-setup-grub.hook.chroot
-# GRUB タイムアウトを 1 秒に固定する
+# GRUB タイムアウト・ブランディング・ロゴを設定する
 set -e
 
-echo "[Sisrin] GRUB タイムアウトを 1 秒に設定します"
+echo "[Sisrin] GRUB を設定します"
 
 GRUB_DEFAULT="/etc/default/grub"
+LOGO_SRC="/usr/share/sisrin/logo.png"
+WALLPAPER_SRC="/usr/share/sisrin/wallpaper.png"
+
+# GRUB 背景用ロゴを選択 (logo.png 優先、なければ wallpaper.png を使用)
+if [ -f "$LOGO_SRC" ]; then
+    GRUB_BG="$LOGO_SRC"
+elif [ -f "$WALLPAPER_SRC" ]; then
+    GRUB_BG="$WALLPAPER_SRC"
+else
+    GRUB_BG=""
+fi
 
 if [ -f "$GRUB_DEFAULT" ]; then
-    # GRUB_TIMEOUT を 1 に設定
+    # --- タイムアウト設定 ---
     sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=1/' "$GRUB_DEFAULT"
-    # 設定が存在しない場合は追加
     grep -q '^GRUB_TIMEOUT=' "$GRUB_DEFAULT" || echo "GRUB_TIMEOUT=1" >> "$GRUB_DEFAULT"
-
-    # 即時タイムアウトスタイルをカウントダウンに設定 (1秒カウントダウン)
     sed -i 's/^GRUB_TIMEOUT_STYLE=.*/GRUB_TIMEOUT_STYLE=countdown/' "$GRUB_DEFAULT"
     grep -q '^GRUB_TIMEOUT_STYLE=' "$GRUB_DEFAULT" || echo "GRUB_TIMEOUT_STYLE=countdown" >> "$GRUB_DEFAULT"
 
-    # "Debian" 表記を "Sisrin" に変更
+    # --- ディストリビューター名を Sisrin OS に変更 ---
     sed -i 's/Debian GNU\/Linux/Sisrin OS/g' "$GRUB_DEFAULT"
-    sed -i "s/GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR=\"Sisrin OS\"/" "$GRUB_DEFAULT"
+    sed -i 's/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR="Sisrin OS"/' "$GRUB_DEFAULT"
+    grep -q '^GRUB_DISTRIBUTOR=' "$GRUB_DEFAULT" || echo 'GRUB_DISTRIBUTOR="Sisrin OS"' >> "$GRUB_DEFAULT"
 
-    # GRUB テーマ設定 (存在すれば適用)
-    grep -q '^GRUB_THEME=' "$GRUB_DEFAULT" || echo 'GRUB_THEME=""' >> "$GRUB_DEFAULT"
+    # --- ロゴ / 背景設定 ---
+    if [ -n "$GRUB_BG" ]; then
+        sed -i '/^GRUB_BACKGROUND=/d' "$GRUB_DEFAULT"
+        echo "GRUB_BACKGROUND=\"${GRUB_BG}\"" >> "$GRUB_DEFAULT"
+        echo "[Sisrin] GRUB 背景: ${GRUB_BG}"
+    fi
 
-    echo "[Sisrin] /etc/default/grub の設定:"
-    grep -E '^GRUB_TIMEOUT|^GRUB_DISTRIBUTOR|^GRUB_THEME' "$GRUB_DEFAULT"
+    # テーマ行は空で残す (背景のみ使用)
+    sed -i '/^GRUB_THEME=/d' "$GRUB_DEFAULT"
+    echo 'GRUB_THEME=""' >> "$GRUB_DEFAULT"
+
+    echo "[Sisrin] /etc/default/grub:"
+    grep -E '^GRUB_TIMEOUT|^GRUB_DISTRIBUTOR|^GRUB_BACKGROUND' "$GRUB_DEFAULT"
 else
     echo "[Sisrin] 警告: ${GRUB_DEFAULT} が見つかりません"
 fi
 
-# GRUB 設定の再生成
+# --- /etc/grub.d/10_linux と /etc/grub.d/30_os-prober の Debian 表記を置換 ---
+for f in /etc/grub.d/10_linux /etc/grub.d/30_os-prober; do
+    if [ -f "$f" ]; then
+        sed -i 's/Debian GNU\/Linux/Sisrin OS/g' "$f"
+        sed -i 's/Debian/Sisrin OS/g' "$f"
+    fi
+done
+
+# GRUB 設定の再生成 (live 環境では /boot が存在しない場合もあるため ignore)
 if command -v update-grub &>/dev/null; then
     update-grub 2>/dev/null || true
 fi
 
-# /boot/grub/grub.cfg 内の "Debian" 表記も書き換え (存在する場合)
+# 既存 grub.cfg があれば書き換え
 if [ -f /boot/grub/grub.cfg ]; then
     sed -i 's/Debian GNU\/Linux/Sisrin OS/g' /boot/grub/grub.cfg
     sed -i 's/menuentry.*Debian/menuentry "Sisrin OS/g' /boot/grub/grub.cfg

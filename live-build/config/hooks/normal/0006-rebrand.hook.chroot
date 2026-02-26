@@ -48,18 +48,13 @@ DISTRIB_DESCRIPTION="Sisrin OS ${SISRIN_VERSION} (${SISRIN_CODENAME})"
 EOF
 fi
 
-# --- XFCE / ライトDM の起動スクリーン変更 ---
-# lightdm-gtk-greeter の設定
-if [ -f /etc/lightdm/lightdm-gtk-greeter.conf ]; then
-    cat >> /etc/lightdm/lightdm-gtk-greeter.conf << 'EOF'
-
-[greeter]
-background=/usr/share/sisrin/wallpaper.png
-theme-name=Greybird-dark
-icon-theme-name=elementary-xfce-dark
-font-name=Noto Sans 11
-indicators=~host;~spacer;~clock;~spacer;~power
-clock-format=%Y-%m-%d %H:%M
+# --- GDM3 グリーター カスタムロゴ設定 ---
+if [ -d /etc/gdm3 ]; then
+    mkdir -p /etc/gdm3
+    cat >> /etc/gdm3/greeter.dconf-defaults << 'EOF'
+[org/gnome/login-screen]
+disable-restart-buttons=false
+logo='/usr/share/sisrin/logo.png'
 EOF
 fi
 
@@ -94,14 +89,10 @@ cat > /etc/motd << EOF
 
 EOF
 
-# --- XFCE about dialog の設定 ---
-mkdir -p /etc/xdg/xfce4
-cat > /etc/xdg/xfce4/about.cfg << EOF
-[About]
-DistributionName=Sisrin OS
-DistributionVersion=${SISRIN_VERSION}
-DistributionSupportURL=https://github.com/rintaro-s
-EOF
+# --- GNOME about dialog (gnome-control-center) を Sisrin にリブランド ---
+# os-release の PRETTY_NAME が GNOME の「このシステムについて」に表示される
+# すでに上部で設定済みのため追加処理不要
+true
 
 # --- plymouth スプラッシュスクリーン (存在する場合) ---
 if command -v update-alternatives &>/dev/null; then

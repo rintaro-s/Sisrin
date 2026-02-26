@@ -101,6 +101,16 @@ else
     warn "デフォルト壁紙を使用します (0008-setup-wallpaper.hook.chroot で処理)"
 fi
 
+# --- logo.png のコピー (存在すれば GRUB・GDM3・Calamares ロゴに使用) ---
+LOGO="${WORKSPACE_DIR}/logo.png"
+if [[ -f "$LOGO" ]]; then
+    log "logo.png をコピーします..."
+    cp -v "$LOGO" "${WALLPAPER_DEST}/logo.png"
+    ok "logo.png コピー完了"
+else
+    warn "logo.png が見つかりません。wallpaper.png をロゴ代わりに使用します"
+fi
+
 # --- lil-hardware-watchdog Rust ソースのコピー ---
 WATCHDOG_SRC="${SCRIPT_DIR}/live-build/lil-hardware-watchdog"
 WATCHDOG_DEST="${INCLUDES_DIR}/usr/local/src/lil-hardware-watchdog"
@@ -121,7 +131,7 @@ log "スクリプトに実行権限を付与します..."
 chmod +x "${LIVE_BUILD_DIR}/auto/config"
 chmod +x "${LIVE_BUILD_DIR}/auto/build"
 chmod +x "${LIVE_BUILD_DIR}/auto/clean"
-find "${LIVE_BUILD_DIR}/config/hooks" -name "*.chroot" -exec chmod +x {} \;
+find "${LIVE_BUILD_DIR}/config/hooks" -type f \( -name "*.chroot" -o -name "*.binary" \) -exec chmod +x {} \;
 chmod +x "${INCLUDES_DIR}/usr/local/bin/sisrin-usb-trust" 2>/dev/null || true
 ok "権限設定完了"
 
