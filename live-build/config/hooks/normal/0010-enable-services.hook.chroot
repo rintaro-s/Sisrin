@@ -1,0 +1,25 @@
+#!/bin/bash
+# 0010-enable-services.hook.chroot
+# systemd サービスを有効化する
+set -e
+
+echo "[Sisrin] サービスを有効化します"
+
+# lil-hardware-watchdog サービスを有効化
+systemctl enable lil-hardware-watchdog.service 2>/dev/null || true
+
+# cups・bluetooth は需要時起動 (lil-hardware-watchdog が動的に起動)
+# デフォルトでは無効にしてリソースを節約
+systemctl disable cups.service 2>/dev/null || true
+systemctl disable bluetooth.service 2>/dev/null || true
+
+# lightdm (ディスプレイマネージャー) を有効化
+systemctl enable lightdm.service 2>/dev/null || true
+
+# NetworkManager を有効化
+systemctl enable NetworkManager.service 2>/dev/null || true
+
+# Sish firstboot セットアップサービスを有効化 (0003でセット済みの場合スキップ)
+systemctl enable sisrin-sish-setup.service 2>/dev/null || true
+
+echo "[Sisrin] サービス有効化完了"

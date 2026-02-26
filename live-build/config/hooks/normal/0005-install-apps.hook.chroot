@@ -1,0 +1,40 @@
+#!/bin/bash
+# 0005-install-apps.hook.chroot
+# Vivaldi ブラウザと Discord をダウンロード・インストールする
+set -e
+
+echo "[Sisrin] Vivaldi および Discord をインストールします"
+
+export DEBIAN_FRONTEND=noninteractive
+TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+# --- Vivaldi のインストール ---
+VIVALDI_URL="https://downloads.vivaldi.com/stable/vivaldi-stable_7.8.3925.74-1_amd64.deb"
+VIVALDI_DEB="${TMP_DIR}/vivaldi.deb"
+
+echo "[Sisrin] Vivaldi をダウンロード中..."
+wget -q --show-progress --timeout=300 -O "$VIVALDI_DEB" "$VIVALDI_URL" \
+    || curl -fsSL --max-time 300 -o "$VIVALDI_DEB" "$VIVALDI_URL"
+
+echo "[Sisrin] Vivaldi をインストール中..."
+dpkg -i "$VIVALDI_DEB" || apt-get -f install -y
+echo "[Sisrin] Vivaldi のインストール完了"
+
+# Vivaldi が Chromium の代替になるよう設定
+update-alternatives --set x-www-browser /usr/bin/vivaldi-stable 2>/dev/null || true
+update-alternatives --set gnome-www-browser /usr/bin/vivaldi-stable 2>/dev/null || true
+
+# --- Discord のインストール ---
+DISCORD_URL="https://discord.com/api/download?platform=linux&format=deb"
+DISCORD_DEB="${TMP_DIR}/discord.deb"
+
+echo "[Sisrin] Discord をダウンロード中..."
+wget -q --show-progress --timeout=300 -O "$DISCORD_DEB" "$DISCORD_URL" \
+    || curl -fsSL -L --max-time 300 -o "$DISCORD_DEB" "$DISCORD_URL"
+
+echo "[Sisrin] Discord をインストール中..."
+dpkg -i "$DISCORD_DEB" || apt-get -f install -y
+echo "[Sisrin] Discord のインストール完了"
+
+echo "[Sisrin] アプリケーションのインストールが完了しました"

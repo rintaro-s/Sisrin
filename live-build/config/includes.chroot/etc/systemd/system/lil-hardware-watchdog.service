@@ -1,0 +1,26 @@
+[Unit]
+Description=Sisrin lil-hardware-watchdog - ハードウェア接続監視デーモン
+Documentation=https://github.com/rintaro-s
+After=udev.service systemd-udevd.service
+Requires=udev.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/lil-hardware-watchdog
+Restart=on-failure
+RestartSec=5
+User=root
+Group=root
+# ログレベル設定
+Environment=RUST_LOG=info
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lil-hardware-watchdog
+
+# セキュリティ強化 (systemctl 実行に必要な権限を残す)
+NoNewPrivileges=no
+ProtectSystem=false
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,39 @@
+#!/bin/bash
+# 0001-install-kernel.hook.chroot
+# カスタム BORE カーネル DEB をインストールする
+set -e
+
+KERNEL_DIR="/root/kernel-debs"
+echo "[Sisrin] カスタムカーネル (BORE + PREEMPT_FULL) をインストールします"
+
+# カスタムカーネル不使用マーカーが存在する場合はスキップ
+if [ -f "${KERNEL_DIR}/.no-custom-kernel" ]; then
+    echo "[Sisrin] カスタムカーネルなし - 標準 Debian カーネルを使用します"
+    exit 0
+fi
+
+# DEB ファイルが存在するか確認
+if ls "${KERNEL_DIR}"/*.deb 1>/dev/null 2>&1; then
+    # linux-image を最初にインストール
+    if ls "${KERNEL_DIR}"/linux-image-*.deb 1>/dev/null 2>&1; then
+        dpkg -i "${KERNEL_DIR}"/linux-image-*.deb || true
+    fi
+    # linux-headers をインストール
+    if ls "${KERNEL_DIR}"/linux-headers-*.deb 1>/dev/null 2>&1; then
+        dpkg -i "${KERNEL_DIR}"/linux-headers-*.deb || true
+    fi
+    # linux-libc-dev をインストール
+    if ls "${KERNEL_DIR}"/linux-libc-dev*.deb 1>/dev/null 2>&1; then
+        dpkg -i "${KERNEL_DIR}"/linux-libc-dev*.deb || true
+    fi
+    # 依存関係を解決
+    apt-get -f install -y || true
+
+    echo "[Sisrin] カーネルインストール完了"
+
+    # インストール後、initramfs を更新
+    update-initramfs -u -k all || true
+else
+    echo "[Sisrin] 警告: カーネル DEB ファイルが見つかりません: ${KERNEL_DIR}"
+    echo "[Sisrin] 標準 Debian カーネルを使用します"
+fi

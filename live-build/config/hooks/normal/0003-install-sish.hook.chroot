@@ -1,0 +1,53 @@
+#!/bin/bash
+# 0003-install-sish.hook.chroot
+# Sish シェルをビルド時にクローン・セットアップする
+# (live 環境ではネットワーク接続が必要なため、firstboot スクリプトも用意する)
+set -e
+
+echo "[Sisrin] Sish のセットアップを構成します"
+
+# ---- ビルド時クローン (ネットワーク可能な場合) ----
+SISH_TARGET="/home/user/Sisrin/Sish"
+mkdir -p "$(dirname "$SISH_TARGET")"
+
+if git clone --depth=1 https://github.com/rintaro-s/Sish.git "$SISH_TARGET" 2>/dev/null; then
+    echo "[Sisrin] Sish のクローンに成功しました"
+    cd "$SISH_TARGET"
+    # setup.sh が存在する場合は実行
+    if [ -x "./setup.sh" ]; then
+        export gcc=gcc
+        bash ./setup.sh || true
+    fi
+    # 所有権を設定 (ライブユーザー uid=1000)
+    chown -R 1000:1000 /home/user/Sisrin 2>/dev/null || true
+    echo "[Sisrin] Sish のセットアップ完了"
+else
+    echo "[Sisrin] 警告: ビルド時の Sish クローンに失敗しました。firstboot セットアップにフォールバックします"
+fi
+
+# ---- firstboot サービスを作成 (ビルド時に失敗した場合のフォールバック) ----
+cat > /etc/systemd/system/sisrin-sish-setup.service << 'UNIT'
+[Unit]
+Description=Sisrin - Sish 初回セットアップ
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=!/home/user/Sisrin/Sish/sish
+
+[Service]
+Type=oneshot
+User=user
+ExecStart=/bin/bash -c '\
+    mkdir -p /home/user/Sisrin && \
+    git clone --depth=1 https://github.com/rintaro-s/Sish.git /home/user/Sisrin/Sish && \
+    cd /home/user/Sisrin/Sish && \
+    export gcc=gcc && \
+    [ -x ./setup.sh ] && ./setup.sh || true'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+systemctl enable sisrin-sish-setup.service
+
+echo "[Sisrin] Sish firstboot サービスを登録しました"

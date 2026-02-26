@@ -1,0 +1,45 @@
+#!/bin/bash
+# 0002-setup-zsh.hook.chroot
+# zsh をデフォルトシステムシェルに設定し、
+# ログイン時に Sish が自動起動されるよう構成する
+set -e
+
+echo "[Sisrin] zsh をデフォルトシェルに設定します"
+
+# zsh がインストールされているか確認
+which zsh || apt-get install -y zsh
+
+ZSH_PATH=$(which zsh)
+
+# システム全体のデフォルトシェルを zsh に変更
+chsh -s "$ZSH_PATH" root 2>/dev/null || true
+
+# /etc/default/useradd を書き換えて新規ユーザーのデフォルトシェルも zsh に
+if [ -f /etc/default/useradd ]; then
+    sed -i "s|^SHELL=.*|SHELL=${ZSH_PATH}|" /etc/default/useradd
+fi
+
+# /etc/shells に zsh を追加 (未登録の場合)
+grep -qxF "$ZSH_PATH" /etc/shells || echo "$ZSH_PATH" >> /etc/shells
+
+# ライブ環境の標準ユーザー (user) のシェルも変更
+if id user &>/dev/null; then
+    chsh -s "$ZSH_PATH" user
+fi
+
+# /etc/zsh/zshrc に Sish 自動起動の設定を追加
+cat >> /etc/zsh/zshrc << 'EOF'
+
+# --- Sisrin: Sish 自動起動 ---
+_SISH_PATH="/home/user/Sisrin/Sish/sish"
+if [[ -x "$_SISH_PATH" ]] && [[ -t 0 ]]; then
+    # 対話型シェルかつ既に Sish 内でなければ起動
+    if [[ "${SISH_RUNNING}" != "1" ]]; then
+        export SISH_RUNNING=1
+        exec env SISH_LANG=en "$_SISH_PATH"
+    fi
+fi
+unset _SISH_PATH
+EOF
+
+echo "[Sisrin] zsh デフォルトシェル設定完了"

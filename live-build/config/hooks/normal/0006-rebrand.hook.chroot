@@ -1,0 +1,112 @@
+#!/bin/bash
+# 0006-rebrand.hook.chroot
+# "Debian" の表記を "Sisrin" に変更するリブランド処理
+# ライセンス上の要件: Debian の商標・名称を変更する
+set -e
+
+echo "[Sisrin] OS リブランド処理を開始します"
+
+SISRIN_VERSION="1.0"
+SISRIN_CODENAME="Aurora"
+BUILD_DATE=$(date +"%Y-%m-%d")
+
+# --- /etc/os-release の書き換え ---
+cat > /etc/os-release << EOF
+PRETTY_NAME="Sisrin OS ${SISRIN_VERSION} (${SISRIN_CODENAME})"
+NAME="Sisrin OS"
+VERSION_ID="${SISRIN_VERSION}"
+VERSION="Sisrin OS ${SISRIN_VERSION} (${SISRIN_CODENAME})"
+VERSION_CODENAME=${SISRIN_CODENAME,,}
+ID=sisrin
+ID_LIKE=debian
+HOME_URL="https://github.com/rintaro-s"
+SUPPORT_URL="https://github.com/rintaro-s"
+BUG_REPORT_URL="https://github.com/rintaro-s"
+BUILD_ID="${BUILD_DATE}"
+EOF
+
+# --- /etc/issue および /etc/issue.net ---
+cat > /etc/issue << EOF
+Sisrin OS ${SISRIN_VERSION} \n \l
+
+EOF
+
+cat > /etc/issue.net << EOF
+Sisrin OS ${SISRIN_VERSION}
+EOF
+
+# --- /etc/debian_version を置き換え (ツールの互換性のため残すが内容を変更) ---
+echo "sisrin/${SISRIN_VERSION}" > /etc/debian_version
+
+# --- lsb_release の設定 ---
+if [ -f /etc/lsb-release ]; then
+    cat > /etc/lsb-release << EOF
+DISTRIB_ID=Sisrin
+DISTRIB_RELEASE=${SISRIN_VERSION}
+DISTRIB_CODENAME=${SISRIN_CODENAME,,}
+DISTRIB_DESCRIPTION="Sisrin OS ${SISRIN_VERSION} (${SISRIN_CODENAME})"
+EOF
+fi
+
+# --- XFCE / ライトDM の起動スクリーン変更 ---
+# lightdm-gtk-greeter の設定
+if [ -f /etc/lightdm/lightdm-gtk-greeter.conf ]; then
+    cat >> /etc/lightdm/lightdm-gtk-greeter.conf << 'EOF'
+
+[greeter]
+background=/usr/share/sisrin/wallpaper.png
+theme-name=Greybird-dark
+icon-theme-name=elementary-xfce-dark
+font-name=Noto Sans 11
+indicators=~host;~spacer;~clock;~spacer;~power
+clock-format=%Y-%m-%d %H:%M
+EOF
+fi
+
+# --- /usr/bin/lsb_release の出力を上書き (シェルスクリプトラッパー) ---
+# 既存の lsb_release を退避してラッパーを作成
+if [ -f /usr/bin/lsb_release ] && [ ! -f /usr/bin/lsb_release.orig ]; then
+    mv /usr/bin/lsb_release /usr/bin/lsb_release.orig
+    cat > /usr/bin/lsb_release << 'WRAPPER'
+#!/bin/bash
+# Sisrin lsb_release ラッパー
+OUTPUT=$(/usr/bin/lsb_release.orig "$@" 2>/dev/null)
+echo "$OUTPUT" | sed \
+    -e 's/Debian GNU\/Linux/Sisrin OS/g' \
+    -e 's/Debian/Sisrin/g' \
+    -e 's/debian/sisrin/g'
+WRAPPER
+    chmod +x /usr/bin/lsb_release
+fi
+
+# --- /etc/motd ---
+cat > /etc/motd << EOF
+
+    ███████╗██╗███████╗██████╗ ██╗███╗   ██╗
+    ██╔════╝██║██╔════╝██╔══██╗██║████╗  ██║
+    ███████╗██║███████╗██████╔╝██║██╔██╗ ██║
+    ╚════██║██║╚════██║██╔══██╗██║██║╚██╗██║
+    ███████║██║███████║██║  ██║██║██║ ╚████║
+    ╚══════╝╚═╝╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝
+
+    Sisrin OS ${SISRIN_VERSION} "${SISRIN_CODENAME}"
+    Built on ${BUILD_DATE}
+
+EOF
+
+# --- XFCE about dialog の設定 ---
+mkdir -p /etc/xdg/xfce4
+cat > /etc/xdg/xfce4/about.cfg << EOF
+[About]
+DistributionName=Sisrin OS
+DistributionVersion=${SISRIN_VERSION}
+DistributionSupportURL=https://github.com/rintaro-s
+EOF
+
+# --- plymouth スプラッシュスクリーン (存在する場合) ---
+if command -v update-alternatives &>/dev/null; then
+    # Sisrin テーマが存在する場合のみ設定
+    true
+fi
+
+echo "[Sisrin] リブランド処理完了"

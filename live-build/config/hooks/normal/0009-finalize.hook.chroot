@@ -1,0 +1,41 @@
+#!/bin/bash
+# 0009-finalize.hook.chroot
+# 最終的なパーミッション設定と不要ファイルの削除
+set -e
+
+echo "[Sisrin] 最終化処理を実行します"
+
+# スクリプトに実行権限を付与
+chmod +x /usr/local/bin/sisrin-usb-trust 2>/dev/null || true
+chmod +x /usr/local/bin/lil-hardware-watchdog 2>/dev/null || true
+
+# udev ルールのパーミッション確認
+chmod 644 /etc/udev/rules.d/99-sisrin-serial.rules 2>/dev/null || true
+
+# udev ルールキャッシュを更新
+udevadm control --reload-rules 2>/dev/null || true
+
+# sudo 設定: lil-hardware-watchdog が systemctl を呼べるように
+cat > /etc/sudoers.d/sisrin-watchdog << 'SUDOERS'
+# lil-hardware-watchdog: cups / bluetooth サービス起動のための権限
+lil-hardware-watchdog ALL=(root) NOPASSWD: /bin/systemctl start cups.service
+lil-hardware-watchdog ALL=(root) NOPASSWD: /bin/systemctl start bluetooth.service
+lil-hardware-watchdog ALL=(root) NOPASSWD: /bin/systemctl stop cups.service
+lil-hardware-watchdog ALL=(root) NOPASSWD: /bin/systemctl stop bluetooth.service
+SUDOERS
+chmod 440 /etc/sudoers.d/sisrin-watchdog
+
+# acl パッケージが確実にインストールされているか確認
+dpkg -l acl &>/dev/null || apt-get install -y acl
+
+# ビルド用パッケージを削除してISO容量を削減
+# 注意: autoremove は使わない (live-boot等の重要パッケージが削除される恐れがある)
+apt-get remove -y --purge rustc cargo autoconf automake \
+    libudev-dev libacl1-dev libssl-dev libseccomp-dev libattr1-dev \
+    2>/dev/null || true
+apt-get clean
+
+# /root/kernel-debs を削除 (インストール済み)
+rm -rf /root/kernel-debs 2>/dev/null || true
+
+echo "[Sisrin] 最終化処理完了"

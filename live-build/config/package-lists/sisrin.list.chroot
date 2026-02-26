@@ -1,0 +1,87 @@
+# Sisrin OS パッケージリスト
+
+# 基本システム
+zsh
+curl
+wget
+git
+ca-certificates
+acl
+udev
+usbutils
+polkitd
+pkexec
+libpam-systemd
+
+# デスクトップ環境 (XFCE)
+xfce4
+xfce4-terminal
+xfce4-screenshooter
+xfce4-taskmanager
+xfce4-power-manager
+thunar
+lightdm
+lightdm-gtk-greeter
+
+# Xorg (Recommends の自動インストールが無効でも確実に入れる)
+xserver-xorg
+xserver-xorg-core
+xserver-xorg-input-all
+xserver-xorg-video-all
+xserver-xorg-video-fbdev
+xserver-xorg-video-vesa
+x11-xserver-utils
+x11-utils
+xterm
+dbus-x11
+
+# ブラウザ・その他GUIアプリ前提
+libglib2.0-0
+libgtk-3-0
+libasound2t64
+libnotify4
+
+# ダイアログ(udev信頼確認用)
+zenity
+yad
+
+# プリンタ
+cups
+cups-client
+system-config-printer
+
+# Bluetooth
+bluez
+bluez-tools
+blueman
+
+# フォント・日本語入力
+fonts-noto-cjk
+fcitx5
+fcitx5-anthy
+
+# ビルドツール (Sish / lil-hardware-watchdog ビルド用)
+build-essential
+autoconf
+automake
+pkg-config
+libssl-dev
+rustc
+cargo
+libseccomp-dev
+
+# その他ユーティリティ
+sudo
+bash
+file
+less
+nano
+htop
+network-manager
+network-manager-gnome
+pulseaudio
+pavucontrol
+gvfs
+thunar
+mousepad
+ristretto

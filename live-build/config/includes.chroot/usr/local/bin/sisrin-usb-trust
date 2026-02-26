@@ -1,0 +1,72 @@
+#!/bin/bash
+# sisrin-usb-trust: USBシリアルデバイス接続時の信頼確認ダイアログ
+# udev RUN から呼び出される。グループへの永続的な追加は行わず、
+# ACL (setfacl) による動的 rw 権限付与のみを実施する。
+#
+# 使い方: sisrin-usb-trust <DEVNAME> <idVendor> <idProduct>
+
+DEVNAME="$1"
+VENDOR="$2"
+PRODUCT="$3"
+
+# デバイスが存在しない場合は終了
+[ -e "$DEVNAME" ] || exit 0
+
+# アクティブなログインセッションのユーザーを取得 (systemd-logind)
+ACTIVE_USER=$(loginctl list-sessions --no-legend 2>/dev/null \
+    | awk '$3 ~ /^[a-zA-Z]/ && $5 == "seat0" {print $3; exit}')
+
+if [ -z "$ACTIVE_USER" ]; then
+    # seat0 で見つからない場合は最初のアクティブセッションのユーザーを使用
+    ACTIVE_USER=$(loginctl list-sessions --no-legend 2>/dev/null \
+        | awk 'NR==1 {print $3}')
+fi
+
+[ -z "$ACTIVE_USER" ] && exit 0
+
+# ユーザーの DISPLAY / DBUS_SESSION_BUS_ADDRESS を取得
+USER_UID=$(id -u "$ACTIVE_USER" 2>/dev/null) || exit 0
+DISPLAY_VAL=$(su -c 'echo $DISPLAY' "$ACTIVE_USER" 2>/dev/null || echo ":0")
+DBUS_ADDR=$(su -c 'echo $DBUS_SESSION_BUS_ADDRESS' "$ACTIVE_USER" 2>/dev/null || \
+    ls /run/user/"$USER_UID"/bus 2>/dev/null | head -1 | xargs -I{} echo "unix:path={}" || \
+    echo "unix:path=/run/user/${USER_UID}/bus")
+
+# ベンダー名の簡易マッピング
+case "$VENDOR" in
+    1a86) VENDOR_NAME="WCH (CH340/CH9102)" ;;
+    10c4) VENDOR_NAME="Silicon Labs (CP210x)" ;;
+    0403) VENDOR_NAME="FTDI" ;;
+    2341) VENDOR_NAME="Arduino" ;;
+    18d1) VENDOR_NAME="Google / Android" ;;
+    067b) VENDOR_NAME="Prolific (PL2303)" ;;
+    *)    VENDOR_NAME="Unknown ($VENDOR)" ;;
+esac
+
+# 確認ダイアログを表示
+RESULT=$(sudo -u "$ACTIVE_USER" \
+    DISPLAY="$DISPLAY_VAL" \
+    DBUS_SESSION_BUS_ADDRESS="$DBUS_ADDR" \
+    zenity --question \
+        --title="Sisrin - デバイスの信頼確認" \
+        --text="新しいシリアルデバイスが接続されました。\n\nデバイス: ${DEVNAME}\nメーカー: ${VENDOR_NAME}\n製品ID: ${PRODUCT}\n\n${ACTIVE_USER} に読み書き権限を付与しますか？\n\n※ この権限はセッション中のみ有効です。" \
+        --ok-label="許可する" \
+        --cancel-label="拒否する" \
+        2>/dev/null
+    echo $?)
+
+if [ "$RESULT" = "0" ]; then
+    # ACL で現在のユーザーに rw 権限を付与 (setfacl)
+    setfacl -m "u:${ACTIVE_USER}:rw" "$DEVNAME"
+    
+    # 通知
+    sudo -u "$ACTIVE_USER" \
+        DISPLAY="$DISPLAY_VAL" \
+        DBUS_SESSION_BUS_ADDRESS="$DBUS_ADDR" \
+        notify-send \
+            "Sisrin" \
+            "${DEVNAME} への読み書き権限を付与しました。" \
+            --icon=device \
+            2>/dev/null || true
+fi
+
+exit 0

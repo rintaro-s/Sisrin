@@ -1,0 +1,37 @@
+# OS build artifacts
+live-build/live-image-*.iso
+live-build/live-image-*.img
+live-build/live-image-*.hybrid.iso
+live-build/live-image-*.hybrid.img
+live-build/binary/
+live-build/cache/
+live-build/chroot/
+live-build/scratch/
+live-build/tmp/
+live-build/.stage/
+live-build/.lock
+
+# Kernel DEBs
+kernel/*.deb
+
+# Rust build artifacts
+live-build/lil-hardware-watchdog/target/
+
+# Logs
+*.log
+/tmp/boot*.log
+/tmp/qemu.out
+
+# Editor/OS files
+*~
+*.swp
+.DS_Store
+.vscode/
+.idea/
+
+# VSCode server
+.vscode-server/
+
+# Misc
+*.bak
+*.old

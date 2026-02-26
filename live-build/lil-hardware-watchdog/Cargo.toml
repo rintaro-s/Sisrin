@@ -1,0 +1,15 @@
+[package]
+name = "lil-hardware-watchdog"
+version = "0.1.0"
+edition = "2021"
+description = "Sisrin OS - ハードウェア接続監視デーモン (netlinkベース)"
+license = "MIT"
+
+[[bin]]
+name = "lil-hardware-watchdog"
+path = "src/main.rs"
+
+[dependencies]
+udev = "0.8"
+log = "0.4"
+env_logger = "0.11"

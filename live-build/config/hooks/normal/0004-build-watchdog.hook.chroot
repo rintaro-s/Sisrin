@@ -1,0 +1,31 @@
+#!/bin/bash
+# 0004-build-watchdog.hook.chroot
+# lil-hardware-watchdog を Rust でビルド・インストールする
+set -e
+
+echo "[Sisrin] lil-hardware-watchdog (Rust) をビルドします"
+
+# ビルド依存をインストール
+apt-get install -y --no-install-recommends \
+    rustc cargo pkg-config \
+    libudev-dev libacl1-dev 2>/dev/null || true
+
+SRC_DIR="/usr/local/src/lil-hardware-watchdog"
+
+if [ ! -d "$SRC_DIR" ]; then
+    echo "[Sisrin] エラー: ソースディレクトリが見つかりません: ${SRC_DIR}"
+    exit 1
+fi
+
+cd "$SRC_DIR"
+
+# ビルド (release モード)
+cargo build --release 2>&1 | tail -20
+
+# バイナリをインストール
+install -m 755 target/release/lil-hardware-watchdog /usr/local/bin/lil-hardware-watchdog
+
+echo "[Sisrin] lil-hardware-watchdog のビルド・インストール完了"
+
+# ビルド用一時ファイルを削除 (ISO サイズ削減)
+rm -rf target "$HOME/.cargo/registry" "$HOME/.cargo/git" 2>/dev/null || true

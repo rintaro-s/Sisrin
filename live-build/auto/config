@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+
+# Sisrin OS - Debian testing ベースのカスタムOSビルド設定
+lb config noauto \
+    --distribution testing \
+    --archive-areas "main contrib non-free non-free-firmware" \
+    --debian-installer none \
+    --bootappend-live "boot=live components hostname=sisrin username=user quiet splash" \
+    --binary-images iso-hybrid \
+    --memtest none \
+    --debian-installer-distribution testing \
+    --apt-indices false \
+    --apt-recommends true \
+    --firmware-binary true \
+    --firmware-chroot true \
+    --bootloaders "syslinux grub-efi" \
+    --iso-volume "Sisrin OS" \
+    --iso-publisher "Sisrin OS Project" \
+    --iso-application "Sisrin OS Live" \
+    "$@"

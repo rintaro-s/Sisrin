@@ -1,0 +1,40 @@
+#!/bin/bash
+# 0000-setup-locale.hook.chroot
+# ロケール・タイムゾーン・キーボードの設定
+# (0001 より前に実行されるよう 0000 にする)
+set -e
+
+echo "[Sisrin] ロケール・タイムゾーン設定を行います"
+
+export DEBIAN_FRONTEND=noninteractive
+
+# ロケール生成
+apt-get install -y --no-install-recommends locales 2>/dev/null || true
+echo "ja_JP.UTF-8 UTF-8" >> /etc/locale.gen
+echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+locale-gen
+
+# デフォルトロケールを英語に (Sisrin は i18n 対応だが、まず英語を基本とする)
+update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+
+# タイムゾーン (日本時間)
+ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+echo "Asia/Tokyo" > /etc/timezone
+dpkg-reconfigure -f noninteractive tzdata
+
+# fcitx5 の自動起動設定
+if command -v fcitx5 &>/dev/null; then
+    mkdir -p /etc/xdg/autostart
+    cat > /etc/xdg/autostart/fcitx5.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Fcitx5
+Comment=Input Method Framework
+Exec=fcitx5
+Icon=fcitx5
+Terminal=false
+Hidden=false
+EOF
+fi
+
+echo "[Sisrin] ロケール設定完了"

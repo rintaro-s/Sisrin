@@ -1,0 +1,73 @@
+#!/bin/bash
+# 0008-setup-wallpaper.hook.chroot
+# 壁紙を設定し、XFCE のデフォルト壁紙として構成する
+set -e
+
+echo "[Sisrin] 壁紙を設定します"
+
+WALLPAPER_SRC="/usr/share/sisrin/wallpaper.png"
+WALLPAPER_DEST="/usr/share/backgrounds/sisrin-wallpaper.png"
+
+# Sisrin ディレクトリ作成
+mkdir -p /usr/share/sisrin
+mkdir -p /usr/share/backgrounds
+
+# includes.chroot でコピー済みか確認
+if [ ! -f "$WALLPAPER_SRC" ]; then
+    echo "[Sisrin] 警告: 壁紙ファイルが見つかりません: ${WALLPAPER_SRC}"
+    echo "[Sisrin] デフォルトの XFCE 壁紙を使用します"
+    WALLPAPER_DEST="/usr/share/xfce4/backdrops/xfce-shapes.svg"
+else
+    cp "$WALLPAPER_SRC" "$WALLPAPER_DEST"
+    echo "[Sisrin] 壁紙をコピーしました: ${WALLPAPER_DEST}"
+fi
+
+# XFCE デフォルト壁紙設定 (全ユーザー共通の xfconf デフォルト値)
+XFCE_SKEL="/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml"
+mkdir -p "$XFCE_SKEL"
+
+cat > "${XFCE_SKEL}/xfce4-desktop.xml" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+
+<channel name="xfce4-desktop" version="1.0">
+  <property name="backdrop" type="empty">
+    <property name="screen0" type="empty">
+      <property name="monitor0" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="${WALLPAPER_DEST}"/>
+        </property>
+      </property>
+      <property name="monitorVirtual1" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="${WALLPAPER_DEST}"/>
+        </property>
+      </property>
+    </property>
+  </property>
+</channel>
+EOF
+
+# lightdm の背景にも適用
+if [ -d /etc/lightdm ]; then
+    sed -i "s|^background=.*|background=${WALLPAPER_DEST}|" \
+        /etc/lightdm/lightdm-gtk-greeter.conf 2>/dev/null || true
+    # 設定ファイルが空もしくは設定がない場合
+    if [ -f /etc/lightdm/lightdm-gtk-greeter.conf ]; then
+        grep -q "^background=" /etc/lightdm/lightdm-gtk-greeter.conf || \
+            echo "background=${WALLPAPER_DEST}" >> /etc/lightdm/lightdm-gtk-greeter.conf
+    fi
+fi
+
+# /home/user にも適用 (ライブユーザー)
+if [ -d /home/user ]; then
+    USER_XFCONF="/home/user/.config/xfce4/xfconf/xfce-perchannel-xml"
+    mkdir -p "$USER_XFCONF"
+    cp "${XFCE_SKEL}/xfce4-desktop.xml" "${USER_XFCONF}/xfce4-desktop.xml"
+    chown -R 1000:1000 /home/user/.config 2>/dev/null || true
+fi
+
+echo "[Sisrin] 壁紙設定完了"

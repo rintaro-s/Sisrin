@@ -1,0 +1,66 @@
+Sisrin システム仕様書（コア・バックエンド）
+
+1. udev自動化とデバイス制御
+
+シリアル通信デバイス等の接続時、ユーザーの介入なしで安全にアクセス権を付与する。
+
+対象デバイス: Arduino, ESP32, Android等のUSBシリアル/マイコン。
+
+権限付与方式: ACL（uaccess）による動的権限付与。
+
+デバイス接続時に信頼確認ダイアログを表示。
+
+許可された場合、udevルールが /dev/nodes に対して現在のログインユーザー（Active Session）への読み書き（rw）権限を付与する。
+
+グループ権限（dialout等）への永続的な追加は行わない。
+
+2. カーネル仕様
+
+デスクトップの瞬発力と低遅延を極限まで追求する。
+
+スケジューラー: BORE (Burst-Oriented Response Enhancer)。
+
+バースト的なCPU要求（UI操作や描画）を最優先。高負荷下でも操作の「カクつき」を排除。
+
+プリエンプション: CONFIG_PREEMPT_FULL（完全プリエンプティブ）。
+
+ソースおよびビルド環境: /home/user/os/kernel
+
+ビルドスクリプト: /home/user/os/kernel/build.sh
+
+ブートローダー: 内蔵GRUBのタイムアウトを「1秒」に固定。
+
+3. シェル環境
+
+デフォルトのシステムシェルは zsh とし、対話型シェルとして Sish を統合する。
+
+Sishの導入と固定パス:
+システムインストール時に /home/user/Sisrin/Sish へ配置し、セットアップを実行。zsh 起動時に Sish が自動実行されるよう構成する。
+
+# インストール時の標準セットアップ手順
+git clone [https://github.com/rintaro-s/Sish.git](https://github.com/rintaro-s/Sish.git) /home/user/Sisrin/Sish
+cd /home/user/Sisrin/Sish && ./setup.sh
+# 実行コマンドの固定
+SISH_LANG=en ./sish
+
+
+4. ハードウェア・ウォッチドッグ（lil-hardware-watchdog）
+
+ハードウェアの接続状態をリアルタイムで監視し、必要なサービスを動的に制御する。
+
+実装: Rustによるnetlinkソケット監視。
+
+動作:
+
+プリンタ検出時に cups.service を自動起動。
+
+Bluetoothデバイス検出時に bluetooth.service を自動起動。
+
+ゲームコントローラー検出時、99-Sisrin-gamepad.rules を生成し、ACL経由でコントローラーデバイスへの読み書き権限を現在のユーザーに解放する。
+
+
+5. 個人設定
+壁紙は、./wallpaper.pngにして
+Debianという表記は抹消してSisrinという名前に変えて。（ライセンス的に残すとダメなので）
+ブラウザはhttps://downloads.vivaldi.com/stable/vivaldi-stable_7.8.3925.74-1_amd64.deb からDLしてVivaldiも標準搭載させて。
+https://discord.com/api/download?platform=linux&format=deb からDiscordも。

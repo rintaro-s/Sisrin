@@ -1,0 +1,57 @@
+# Sisrin OS - USBシリアル/マイコンデバイス 動的権限付与ルール
+# 対象: Arduino, ESP32, Android USB Serial, CH340, CP210x 等
+#
+# 接続時に信頼確認ダイアログを表示し、
+# 許可された場合のみ現在のログインユーザーへACLで rw 権限を付与する。
+# グループ (dialout 等) への永続的な追加は行わない。
+
+# --- CH340 / CH341 (Arduino Nano, ESP32 等の多くのクローン) ---
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", \
+    TAG+="uaccess", \
+    RUN+="/usr/local/bin/sisrin-usb-trust '%E{DEVNAME}' '%s{idVendor}' '%s{idProduct}'"
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="5523", \
+    TAG+="uaccess", \
+    RUN+="/usr/local/bin/sisrin-usb-trust '%E{DEVNAME}' '%s{idVendor}' '%s{idProduct}'"
+
+# --- CP2102 / CP2104 / CP2109 (ESP32, ESP8266 等) ---
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", \
+    TAG+="uaccess", \
+    RUN+="/usr/local/bin/sisrin-usb-trust '%E{DEVNAME}' '%s{idVendor}' '%s{idProduct}'"
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea70", \
+    TAG+="uaccess", \
+    RUN+="/usr/local/bin/sisrin-usb-trust '%E{DEVNAME}' '%s{idVendor}' '%s{idProduct}'"
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea71", \
+    TAG+="uaccess", \
+    RUN+="/usr/local/bin/sisrin-usb-trust '%E{DEVNAME}' '%s{idVendor}' '%s{idProduct}'"
+
+# --- FTDI (FT232R 等, 各種 Arduino 互換) ---
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", \
+    TAG+="uaccess", \
+    RUN+="/usr/local/bin/sisrin-usb-trust '%E{DEVNAME}' '%s{idVendor}' '%s{idProduct}'"
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", \
+    TAG+="uaccess", \
+    RUN+="/usr/local/bin/sisrin-usb-trust '%E{DEVNAME}' '%s{idVendor}' '%s{idProduct}'"
+
+# --- Arduino 純正 (ATmega16U2 HID/CDC) ---
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", \
+    TAG+="uaccess", \
+    RUN+="/usr/local/bin/sisrin-usb-trust '%E{DEVNAME}' '%s{idVendor}' '%s{idProduct}'"
+
+# --- Android ADB / Fastboot (MTP→ACM fallback) ---
+SUBSYSTEM=="tty", ATTRS{idVendor}=="18d1", \
+    TAG+="uaccess", \
+    RUN+="/usr/local/bin/sisrin-usb-trust '%E{DEVNAME}' '%s{idVendor}' '%s{idProduct}'"
+
+# --- Prolific PL2303 ---
+SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", \
+    TAG+="uaccess", \
+    RUN+="/usr/local/bin/sisrin-usb-trust '%E{DEVNAME}' '%s{idVendor}' '%s{idProduct}'"
+
+# --- WCH CH9102 (新型 ESP32 ボード) ---
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="55d4", \
+    TAG+="uaccess", \
+    RUN+="/usr/local/bin/sisrin-usb-trust '%E{DEVNAME}' '%s{idVendor}' '%s{idProduct}'"
