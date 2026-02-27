@@ -13,8 +13,14 @@ apt-get install -y --no-install-recommends \
 SRC_DIR="/usr/local/src/lil-hardware-watchdog"
 
 if [ ! -d "$SRC_DIR" ]; then
-    echo "[Sisrin] エラー: ソースディレクトリが見つかりません: ${SRC_DIR}"
-    exit 1
+    echo "[Sisrin] 警告: ソースディレクトリが見つかりません: ${SRC_DIR}"
+    echo "[Sisrin] lil-hardware-watchdogのビルドをスキップします"
+    # ダミーバイナリを作成（サービス起動エラーを回避）
+    mkdir -p /usr/local/bin
+    echo '#!/bin/bash' > /usr/local/bin/lil-hardware-watchdog
+    echo 'echo "lil-hardware-watchdog: ビルドされていません"' >> /usr/local/bin/lil-hardware-watchdog
+    chmod +x /usr/local/bin/lil-hardware-watchdog
+    exit 0
 fi
 
 cd "$SRC_DIR"

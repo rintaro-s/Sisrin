@@ -180,6 +180,7 @@ fonts-dejavu-extra	2.37-8
 fonts-dejavu-mono	2.37-8
 fonts-droid-fallback	1:8.1.0r7-1~1.gbp36536b
 fonts-noto-cjk	1:20240730+repack1-1
+fonts-noto-color-emoji	2.051-1
 fonts-noto-mono	20201225-2
 fonts-quicksand	0.2016-2.1
 fonts-urw-base35	20200910-8
@@ -1024,7 +1025,7 @@ libpipewire-0.3-0t64:amd64	1.4.10-1+b1
 libpipewire-0.3-common	1.4.10-1
 libpipewire-0.3-modules:amd64	1.4.10-1+b1
 libpixman-1-0:amd64	0.46.4-1+b1
-libpkgconf3:amd64	1.8.1-4+b1
+libpkgconf7:amd64	2.5.1-4
 libplacebo360:amd64	7.360.0-3
 libplasmaactivities-data	6.5.4-1
 libplasmaactivities7:amd64	6.5.4-1
@@ -1457,9 +1458,9 @@ pipewire:amd64	1.4.10-1+b1
 pipewire-bin	1.4.10-1+b1
 pipewire-pulse	1.4.10-1+b1
 pkexec	127-2
-pkg-config:amd64	1.8.1-4+b1
-pkgconf:amd64	1.8.1-4+b1
-pkgconf-bin	1.8.1-4+b1
+pkg-config:amd64	2.5.1-4
+pkgconf:amd64	2.5.1-4
+pkgconf-bin	2.5.1-4
 plasma-activities-bin	6.5.4-1
 plymouth	24.004.60-5.1
 plymouth-label	24.004.60-5.1

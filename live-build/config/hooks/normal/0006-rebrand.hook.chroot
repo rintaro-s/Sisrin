@@ -23,6 +23,8 @@ HOME_URL="https://github.com/rintaro-s"
 SUPPORT_URL="https://github.com/rintaro-s"
 BUG_REPORT_URL="https://github.com/rintaro-s"
 BUILD_ID="${BUILD_DATE}"
+LOGO="sisrin-logo"
+ICON_NAME="sisrin-logo"
 EOF
 
 # --- /etc/issue および /etc/issue.net ---
@@ -93,6 +95,45 @@ EOF
 # os-release の PRETTY_NAME が GNOME の「このシステムについて」に表示される
 # すでに上部で設定済みのため追加処理不要
 true
+
+# --- Debian ロゴを Sisrin ロゴに置き換え ---
+LOGO_SOURCE="/usr/share/sisrin/logo.png"
+if [ -f "$LOGO_SOURCE" ]; then
+    # pixmaps 内のすべてのDebianロゴを置換
+    mkdir -p /usr/share/pixmaps
+    for debian_logo in /usr/share/pixmaps/debian-logo.png /usr/share/pixmaps/debian*.png; do
+        if [ -f "$debian_logo" ]; then
+            cp -f "$LOGO_SOURCE" "$debian_logo"
+            echo "[Sisrin] Replaced: $debian_logo"
+        fi
+    done
+    
+    # GNOME Control Center
+    mkdir -p /usr/share/gnome-control-center/pixmaps
+    cp -f "$LOGO_SOURCE" /usr/share/gnome-control-center/pixmaps/logo.png 2>/dev/null || true
+
+    # GDM ログイン画面
+    mkdir -p /usr/share/gdm/pixmaps
+    cp -f "$LOGO_SOURCE" /usr/share/gdm/pixmaps/logo.png 2>/dev/null || true
+
+    # システムその他のパス
+    cp -f "$LOGO_SOURCE" /usr/share/pixmaps/sisrin-logo.png 2>/dev/null || true
+    # 既存の debian ロゴを上書き（ある場合）
+    cp -f "$LOGO_SOURCE" /usr/share/pixmaps/debian-logo.png 2>/dev/null || true
+
+    # Calamares ブランディング (画像はfullpath指定)
+    cp -f "$LOGO_SOURCE" /usr/share/pixmaps/calamares-logo.png 2>/dev/null || true
+
+    # hicolor アイコン（48x48 など）へ配置
+    mkdir -p /usr/share/icons/hicolor/48x48/apps
+    mkdir -p /usr/share/icons/hicolor/scalable/apps
+    cp -f "$LOGO_SOURCE" /usr/share/icons/hicolor/48x48/apps/sisrin-logo.png 2>/dev/null || true
+    ln -sf "$LOGO_SOURCE" /usr/share/icons/hicolor/scalable/apps/sisrin-logo.png 2>/dev/null || true
+
+    # アプリケーションディレクトリ
+    mkdir -p /usr/share/app-install/pixmaps
+    cp -f "$LOGO_SOURCE" /usr/share/app-install/pixmaps/sisrin-logo.png 2>/dev/null || true
+fi
 
 # --- plymouth スプラッシュスクリーン (存在する場合) ---
 if command -v update-alternatives &>/dev/null; then

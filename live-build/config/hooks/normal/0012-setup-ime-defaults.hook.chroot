@@ -1,0 +1,121 @@
+#!/bin/bash
+# 0012-setup-ime-defaults.hook.chroot
+# ライブユーザーと新規ユーザーのIME/キーボード デフォルト設定
+set -e
+
+echo "[Sisrin] IME/キーボードのデフォルト設定を行います"
+
+# ============================================================
+# システム全体のデフォルトIMをFcitx5に設定
+# ============================================================
+im-config -n fcitx5
+
+# ============================================================
+# /etc/skel に Fcitx5 設定を配置（新規ユーザー用）
+# ============================================================
+mkdir -p /etc/skel/.config/fcitx5/conf
+
+# Fcitx5 メイン設定
+cat > /etc/skel/.config/fcitx5/config << 'EOF'
+[Hotkey]
+TriggerKeys=Control+space
+EnumerateWithTriggerKeys=True
+
+[Behavior]
+ActiveByDefault=True
+ShareInputState=All
+EOF
+
+# Fcitx5 プロファイル（日本語キーボードのみ - Anthy無効）
+cat > /etc/skel/.config/fcitx5/profile << 'EOF'
+[Groups/0]
+Name=Default
+Default Layout=jp
+
+[Groups/0/Items/0]
+Name=keyboard-jp
+Layout=jp
+
+[GroupOrder]
+0=Default
+EOF
+
+# ============================================================
+# ライブユーザー(user)にも同じ設定を適用
+# ============================================================
+if [ -d /home/user ]; then
+    mkdir -p /home/user/.config/fcitx5/conf
+    cp -r /etc/skel/.config/fcitx5/* /home/user/.config/fcitx5/
+    chown -R 1000:1000 /home/user/.config/fcitx5
+fi
+
+# ============================================================
+# 環境変数設定（/etc/environment）
+# ============================================================
+cat >> /etc/environment << 'EOF'
+
+# Fcitx5 IME settings
+GTK_IM_MODULE=fcitx
+QT_IM_MODULE=fcitx
+XMODIFIERS=@im=fcitx
+EOF
+
+# ============================================================
+# ライブユーザーの .profile にも追加
+# ============================================================
+if [ -f /home/user/.profile ]; then
+    cat >> /home/user/.profile << 'EOF'
+
+# Fcitx5 IME settings
+export GTK_IM_MODULE=fcitx
+export QT_IM_MODULE=fcitx
+export XMODIFIERS=@im=fcitx
+EOF
+fi
+
+# /etc/skel/.profile にも追加（新規ユーザー用）
+if [ ! -f /etc/skel/.profile ]; then
+    touch /etc/skel/.profile
+fi
+cat >> /etc/skel/.profile << 'EOF'
+
+# Fcitx5 IME settings
+export GTK_IM_MODULE=fcitx
+export QT_IM_MODULE=fcitx
+export XMODIFIERS=@im=fcitx
+EOF
+
+# ============================================================
+# Fcitx5 自動起動設定
+# ============================================================
+mkdir -p /etc/skel/.config/autostart
+cat > /etc/skel/.config/autostart/fcitx5.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Fcitx5
+Exec=fcitx5
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+EOF
+
+# ライブユーザーにも適用
+if [ -d /home/user ]; then
+    mkdir -p /home/user/.config/autostart
+    cp /etc/skel/.config/autostart/fcitx5.desktop /home/user/.config/autostart/
+    chown 1000:1000 /home/user/.config/autostart/fcitx5.desktop
+fi
+
+# ============================================================
+# GNOMEのデフォルトキーボードレイアウトを日本語に設定
+# ============================================================
+mkdir -p /etc/dconf/db/local.d
+cat > /etc/dconf/db/local.d/00-input-sources << 'EOF'
+[org/gnome/desktop/input-sources]
+sources=[('xkb', 'jp')]
+EOF
+
+# dconf データベース更新
+dconf update
+
+echo "[Sisrin] IME/キーボード設定完了"

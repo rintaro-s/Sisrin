@@ -263,6 +263,11 @@ xorgKeyboard:
     keysDir: "/usr/share/X11/xkb/rules"
     rulesFile: "evdev"
     writeEtcDefaultKeyboard: true
+
+# デフォルトキーボードレイアウトを日本語に
+defaultLayout: jp
+defaultVariant: ""
+defaultOptions: ""
 EOF
 
 # ============================================================
@@ -272,6 +277,8 @@ cat > "${MODULES_DIR}/users.conf" << 'EOF'
 ---
 defaultGroups:
     - name: users
+      state: present
+    - name: sudo
       state: present
     - name: lp
       state: present
@@ -359,6 +366,14 @@ script:
       timeout: 10
     - command: "sed -i 's/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR=\"Sisrin OS\"/' /etc/default/grub"
       timeout: 10
+    # OS-PROBER有効化（マルチブート対応）
+    - command: "sed -i 's/^#*GRUB_DISABLE_OS_PROBER=.*/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub"
+      timeout: 10
+    - command: "grep -q '^GRUB_DISABLE_OS_PROBER' /etc/default/grub || echo 'GRUB_DISABLE_OS_PROBER=false' >> /etc/default/grub"
+      timeout: 10
+    # GRUB_DEFAULT=0 に設定（最初のカーネルエントリ＝最新カーネル）
+    - command: "sed -i 's/^GRUB_DEFAULT=.*/GRUB_DEFAULT=0/' /etc/default/grub"
+      timeout: 10
     - command: "sed -i 's/Debian/Sisrin OS/g' /etc/grub.d/10_linux"
       timeout: 10
     - command: "sed -i 's/Debian/Sisrin OS/g' /etc/grub.d/30_os-prober"
@@ -368,6 +383,9 @@ script:
     - command: "sed -i 's/Debian GNU\\/Linux/Sisrin OS/g' /boot/grub/grub.cfg"
       timeout: 10
     - command: "sed -i 's/Debian/Sisrin OS/g' /boot/grub/grub.cfg"
+      timeout: 10
+    # Fcitx5をデフォルトIMに設定
+    - command: "im-config -n fcitx5"
       timeout: 10
     - command: "/usr/bin/dconf update"
       timeout: 30
@@ -543,21 +561,25 @@ chown -R 1000:1000 /home/user/.local /home/user/Desktop 2>/dev/null || true
 echo "[Sisrin] インストーラーショートカット作成完了"
 
 # ============================================================
-# Calamares 自動起動設定 (Live セッション時のみ)
+# Calamares 自動起動設定
 # ============================================================
-AUTOSTART_CALAMARES="/home/user/.config/autostart/sisrin-installer-autostart.desktop"
-mkdir -p /home/user/.config/autostart
-cat > "$AUTOSTART_CALAMARES" << 'EOF'
+mkdir -p /etc/xdg/autostart
+cat > /etc/xdg/autostart/sisrin-installer-autostart.desktop << 'EOF'
 [Desktop Entry]
 Type=Application
-Name=Sisrin OS Installer (Auto)
-Exec=sh -c 'sleep 3 && pkexec calamares'
+Name=Sisrin OS Installer
+Exec=sh -c 'sleep 1 && pkexec calamares'
 Hidden=false
 NoDisplay=false
+Terminal=false
 X-GNOME-Autostart-enabled=true
-X-GNOME-Autostart-Delay=3
+X-GNOME-Autostart-Delay=1
 OnlyShowIn=GNOME;
 EOF
-chown 1000:1000 "$AUTOSTART_CALAMARES"
 
-echo "[Sisrin] インストーラー自動起動を設定しました（3秒後に起動）"
+mkdir -p /home/user/.config/autostart
+cp /etc/xdg/autostart/sisrin-installer-autostart.desktop /home/user/.config/autostart/
+AUTOSTART_CALAMARES="/home/user/.config/autostart/sisrin-installer-autostart.desktop"
+chown -R 1000:1000 /home/user/.config/autostart
+
+echo "[Sisrin] インストーラー自動起動を設定しました（1秒後に起動）"

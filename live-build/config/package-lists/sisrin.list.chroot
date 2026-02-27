@@ -78,10 +78,14 @@ blueman
 
 # フォント・日本語入力
 fonts-noto-cjk
+fonts-noto-color-emoji
 fcitx5
 fcitx5-anthy
+fcitx5-config-qt
+im-config
 
-# ビルドツール (Sish / lil-hardware-watchdog ビルド用)
+# ビルドツール (Sish デベロップ用)
+git
 build-essential
 autoconf
 automake
