@@ -107,6 +107,7 @@ dpkg	1.23.5
 dpkg-dev	1.23.5
 dracut-install	110-1
 e2fsprogs	1.47.2-3+b8
+efibootmgr	18-4.1
 eject	2.41.3-4
 emacsen-common	3.0.8
 enchant-2	2.8.2+dfsg1-3+b1
@@ -312,7 +313,10 @@ gpgsm	2.4.8-5
 gpgv	2.4.8-5
 grep	3.12-1
 groff-base	1.23.0-10
-grub-common	2.14~git20250718.0e36779-2
+grub-efi-amd64	2.14~git20250718.0e36779-2
+grub-efi-amd64-bin	2.14~git20250718.0e36779-2
+grub-efi-amd64-signed	1+2.14~git20250718.0e36779+2
+grub-efi-amd64-unsigned	2.14~git20250718.0e36779-2
 grub2-common	2.14~git20250718.0e36779-2
 gsettings-desktop-schemas	50~alpha-1
 gstreamer1.0-gl:amd64	1.28.0-1
@@ -1410,6 +1414,7 @@ mesa-libgallium:amd64	26.0.0-1
 mesa-vulkan-drivers:amd64	26.0.0-1
 mobile-broadband-provider-info	20251101-1
 modemmanager	1.24.2-2
+mokutil	0.7.2-2
 mount	2.41.3-4
 mutter-common	49.4-1
 mutter-common-bin	49.4-1
@@ -1526,6 +1531,10 @@ sensible-utils	0.0.26
 sgml-base	1.31+nmu1
 sgml-data	2.0.11+nmu1
 shared-mime-info	2.4-5+b3
+shim-helpers-amd64-signed	1+15.8+1
+shim-signed:amd64	1.47+15.8-1
+shim-signed-common	1.47+15.8-1
+shim-unsigned:amd64	15.8-1
 sound-theme-freedesktop	0.8-7
 squashfs-tools	1:4.7.4-1
 sqv	1.3.0-5

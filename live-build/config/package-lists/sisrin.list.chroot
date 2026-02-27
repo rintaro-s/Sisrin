@@ -49,6 +49,13 @@ os-prober
 cryptsetup
 python3-pyqt5
 
+# ブートローダー (UEFI)
+grub-efi-amd64
+grub-efi-amd64-signed
+shim-signed
+efibootmgr
+grub2-common
+
 # ブラウザ・その他GUIアプリ前提
 libglib2.0-0
 libgtk-3-0

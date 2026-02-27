@@ -18,6 +18,14 @@ cat > "${CALAMARES_DIR}/settings.conf" << 'EOF'
 ---
 modules-search: [ local, /usr/lib/calamares/modules ]
 
+instances:
+  - id: before_bootloader
+    module: shellprocess
+    config: shellprocess_pre.conf
+  - id: after_bootloader
+    module: shellprocess
+    config: shellprocess_post.conf
+
 sequence:
   - show:
       - welcome
@@ -42,8 +50,9 @@ sequence:
       - hwclock
       - services-systemd
       - grubcfg
+      - shellprocess@before_bootloader
       - bootloader
-      - shellprocess
+      - shellprocess@after_bootloader
       - packages
       - removeuser
       - umount
@@ -152,6 +161,77 @@ if [ -f "$LANGS_SRC" ]; then
 fi
 
 # ============================================================
+# partition.conf — パーティション設定
+# ============================================================
+cat > "${MODULES_DIR}/partition.conf" << 'EOF'
+---
+efiSystemPartition: "/boot/efi"
+efiSystemPartitionSize: 512M
+efiSystemPartitionName: "EFI"
+
+userSwapChoices:
+    - none
+    - small
+    - suspend
+    - file
+
+drawNestedPartitions: false
+alwaysShowPartitionLabels: true
+initialPartitioningChoice: erase
+initialSwapChoice: small
+
+defaultFileSystemType: "ext4"
+availableFileSystemTypes:
+    - ext4
+    - btrfs
+    - xfs
+EOF
+
+# ============================================================
+# mount.conf — マウント設定
+# ============================================================
+cat > "${MODULES_DIR}/mount.conf" << 'EOF'
+---
+extraMounts:
+    - device: proc
+      fs: proc
+      mountPoint: /proc
+    - device: sys
+      fs: sysfs
+      mountPoint: /sys
+    - device: /dev
+      mountPoint: /dev
+      options: [ bind ]
+    - device: tmpfs
+      fs: tmpfs
+      mountPoint: /run
+    - device: /run/udev
+      mountPoint: /run/udev
+      options: [ bind ]
+
+bios:
+    mountPoint: /boot/grub
+    
+efiMountOptions: umask=0077
+EOF
+
+# ============================================================
+# fstab.conf — fstab 生成設定
+# ============================================================
+cat > "${MODULES_DIR}/fstab.conf" << 'EOF'
+---
+mountOptions:
+    default: defaults,noatime
+    btrfs: defaults,noatime,compress=zstd:1
+
+ssdExtraMountOptions:
+    ext4: discard
+    btrfs: discard=async
+
+crypttabOptions: luks
+EOF
+
+# ============================================================
 # unpackfs.conf — squashfs の展開設定
 # ============================================================
 cat > "${MODULES_DIR}/unpackfs.conf" << 'EOF'
@@ -250,14 +330,31 @@ operations:
 EOF
 
 # ============================================================
-# shellprocess.conf — インストール後の後処理
+# shellprocess_pre.conf — ブートローダー前の処理 (BIOS用grub-pc)
 # ============================================================
-cat > "${MODULES_DIR}/shellprocess.conf" << 'EOF'
+cat > "${MODULES_DIR}/shellprocess_pre.conf" << 'EOF'
 ---
 dontChroot: false
 timeout: 300
 
 script:
+    # BIOS システムの場合は grub-pc をインストール
+    - command: "test -d /sys/firmware/efi || apt-get update"
+      timeout: 60
+    - command: "test -d /sys/firmware/efi || DEBIAN_FRONTEND=noninteractive apt-get install -y grub-pc"
+      timeout: 180
+EOF
+
+# ============================================================
+# shellprocess_post.conf — ブートローダー後の処理 (GRUB設定)
+# ============================================================
+cat > "${MODULES_DIR}/shellprocess_post.conf" << 'EOF'
+---
+dontChroot: false
+timeout: 300
+
+script:
+    # GRUB設定のリブランド
     - command: "sed -i 's/Debian GNU\\/Linux/Sisrin OS/g' /etc/default/grub"
       timeout: 10
     - command: "sed -i 's/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR=\"Sisrin OS\"/' /etc/default/grub"
@@ -267,7 +364,7 @@ script:
     - command: "sed -i 's/Debian/Sisrin OS/g' /etc/grub.d/30_os-prober"
       timeout: 10
     - command: "update-grub"
-      timeout: 60
+      timeout: 120
     - command: "sed -i 's/Debian GNU\\/Linux/Sisrin OS/g' /boot/grub/grub.cfg"
       timeout: 10
     - command: "sed -i 's/Debian/Sisrin OS/g' /boot/grub/grub.cfg"
@@ -314,6 +411,7 @@ efiBootLoader: "grub"
 kernel: "/vmlinuz"
 img: "/initrd.img"
 kernelLine: "quiet splash"
+kernelParams: [ "quiet", "splash" ]
 timeout: 1
 
 grubInstall:    "grub-install"
@@ -323,6 +421,7 @@ grubProbe:      "grub-probe"
 efiBootMgr:     "efibootmgr"
 
 installEFIfallback: true
+efiBootloaderId: "sisrin"
 EOF
 
 # ============================================================
